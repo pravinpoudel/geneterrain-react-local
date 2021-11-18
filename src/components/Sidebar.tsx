@@ -13,7 +13,7 @@ type SidebarProps = {
   setValleyValue: (value : number) => void
 }
 type SidebarState = {
-  nodeData: Array<number>
+  nodeData: Array<number>,
 }
 
 class Sidebar extends React.Component<SidebarProps, SidebarState> {
@@ -51,13 +51,12 @@ class Sidebar extends React.Component<SidebarProps, SidebarState> {
     }
 }
 
-
     componentDidUpdate(){
     
     let self = this;
     let end = false
 
-    this.loadData("mygraph_1_regex.json", (data) => {
+    this.loadData("facebook_1912_clusters.json", (data) => {
     var width = 700;
     var height = 500;
   
@@ -73,7 +72,6 @@ class Sidebar extends React.Component<SidebarProps, SidebarState> {
     var sedges = Stardust.mark.create(Stardust.mark.line(), platform);
 
     let nodes = data.nodes;
-    console.log(nodes)
     let edges = data.edges;
 
     let N = nodes.length;
@@ -178,27 +176,40 @@ class Sidebar extends React.Component<SidebarProps, SidebarState> {
             requested = requestAnimationFrame(render);
         }
 
-        function formatNodeData(snodes){
-          let nodeData2 = [];
+        function formatNodeData(snodes, nodeData2){
           let data = snodes._data;
           for(let i =0, length=data.length; i<length; i++){
-            let x = (data[i].x/width)*2.0 -1.0;
+            let x = (data[i].x/width)*2.0 - 1.0;
             let y = 1.0 - (data[i].y/height)*2.0 ;
-            nodeData2.push( x,y);
+            nodeData2.push(x,y);
+            }
+            self.props.setNodeData(nodeData2, end)
           }
-          self.props.setNodeData(nodeData2, end);
-          }
+
+        function formatEdgeData(sedges, nodeData2){
+          let edgeData2 = [];
+          sedges._data.forEach((edge, index)=>{
+            let sourceIndex = 2*edge.source.index;
+            let targetIndex = 2*edge.target.index;
+            let sourceX = nodeData2[sourceIndex];
+            let sourceY = nodeData2[sourceIndex++];
+            let targetX = nodeData2[targetIndex];
+            let targetY = nodeData2[targetIndex++];
+            edgeData2.push(sourceX, sourceY, targetX, targetY);
+          });
+          self.props.setEdgeData(edgeData2);
+        }
 
          function render() {
             requested = null;
             snodesSelected.data(selectedNode ? [selectedNode] : []);
             // Cleanup and re-render.
+            let nodeData2 = [];
             platform.clear([1, 1, 1, 1]);
-            formatNodeData(snodes);    
+            formatNodeData(snodes, nodeData2);            
+            formatEdgeData(sedges, nodeData2);  
             platform.endPicking();
-
          }
-        
     });
     }
   

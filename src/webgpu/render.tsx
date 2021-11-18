@@ -1,5 +1,5 @@
 import TerrainGenerator from "./terrain_generator";
-import { display_2d_vert, display_2d_frag, node_vert, node_frag } from "./wgsl";
+import { display_2d_vert, display_2d_frag, node_vert, node_frag, vsEdgeSource, fsEdgeSource } from "./wgsl";
 // import * as d3 from 'd3';
 
 const d3 = require("d3");
@@ -14,8 +14,11 @@ class Renderer {
   public bindGroup2D: GPUBindGroup | null = null;
   public nodeBindGroup: GPUBindGroup | null = null;
   public nodePositionBuffer: GPUBuffer | null = null;
+  public edgeDataBuffer: GPUBuffer | null = null;
   public nodePipeline: GPURenderPipeline | null = null;
+  public edgePipeline: GPURenderPipeline | null = null;
   public nodeLength: number = 1;
+  public edgeVertexCount: number = 2;
 
   constructor(
     adapter: GPUAdapter,
@@ -90,6 +93,61 @@ class Renderer {
         depthWriteEnabled: true,
         depthCompare: "less",
       },
+    });
+
+
+
+    let layout = device.createPipelineLayout({bindGroupLayouts: []});
+    let vsEdgeModule = device.createShaderModule({code: vsEdgeSource });
+    let fsEdgeModule = device.createShaderModule({code: fsEdgeSource });
+    
+    this.edgeDataBuffer = device.createBuffer({
+      size: 4*4,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+      mappedAtCreation: true
+    });
+
+    let edgeData = [0, 0, 0.01, 0.01];
+    new Float32Array(this.edgeDataBuffer.getMappedRange()).set(edgeData);
+
+    //setting it to some trivial data so that it won't fail the pipeline before edge data is available
+
+    let vertexState = {
+      module: vsEdgeModule,
+      entryPoint: "main",
+      buffers:[
+        {
+          arrayStride: 2*4*1,
+          attributes:[{
+            format:"float32x2",
+            offset: 0,
+            shaderLocation: 0
+          }
+          ]
+        }
+      ]
+    } 
+    let fragmentState = {
+      module: fsEdgeModule,
+      entryPoint: "main",
+      targets:[{
+        format:presentationFormat
+      }]
+    }
+
+
+    this.edgePipeline = device.createRenderPipeline({
+      layout: layout,
+      vertex: vertexState,
+      fragment: fragmentState,
+      depthStencil: {
+        format:"depth24plus-stencil8",
+        depthWriteEnabled: true,
+        depthCompare: "less"
+      },
+      primitive: {
+        topology: "line-list" //triangle-list is default  
+      }
     });
 
     const pipeline = device.createRenderPipeline({
@@ -292,6 +350,10 @@ class Renderer {
       passEncoder.setPipeline(render.nodePipeline!);
       passEncoder.setVertexBuffer(0, render.nodePositionBuffer!);
       passEncoder.draw(render.nodeLength * 6, 1, 0, 0);
+
+      passEncoder.setPipeline(render.edgePipeline!);
+      passEncoder.setVertexBuffer(0, render.edgeDataBuffer);
+      passEncoder.draw(render.edgeVertexCount)
       passEncoder.setPipeline(pipeline);
       passEncoder.setVertexBuffer(0, dataBuf2D);
       passEncoder.setBindGroup(0, render.bindGroup2D!);
@@ -304,6 +366,7 @@ class Renderer {
     }
 
     requestAnimationFrame(frame);
+
   }
 
 
@@ -344,11 +407,14 @@ class Renderer {
       usage: GPUBufferUsage.VERTEX,
       mappedAtCreation: true,
     });
+
+    
     new Float32Array(this.nodePositionBuffer.getMappedRange()).set(
       nodePositions
     );
     this.nodePositionBuffer.unmap();
     this.nodeLength = nodeData.length / 4;
+
 
     // this.nodeBindGroup = this.device.createBindGroup({
     //   layout: this.nodePipeline!.getBindGroupLayout(1),
@@ -363,6 +429,22 @@ class Renderer {
     // });
   }
 
+
+  setEdgeData(edgeData: Array<number>){
+    
+    this.edgeDataBuffer = this.device.createBuffer({
+      size: edgeData.length*4,
+      usage: GPUBufferUsage.COPY_SRC|GPUBufferUsage.VERTEX,
+      mappedAtCreation: true
+    });
+
+    new Float32Array(this.edgeDataBuffer.getMappedRange()).set(edgeData);
+    this.edgeDataBuffer.unmap();
+    this.edgeVertexCount = edgeData.length/2;
+    
+  }
+
+  
   setWidthFactor(widthFactor: number) {
     this.terrainGenerator!.computeTerrain(undefined, widthFactor);
   }

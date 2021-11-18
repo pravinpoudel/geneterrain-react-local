@@ -29,6 +29,10 @@ class Page extends React.Component<{}, PageState> {
         this.state.renderer!.setNodeData(nodeData, end);
     }
 
+    setEdgeData(edgeData: Array<number>, end:boolean){
+        this.state.renderer!.setEdgeData(edgeData, end);
+    }
+
     setWidthFactor(widthFactor : number) {
         this.state.renderer!.setWidthFactor(widthFactor);
     }
@@ -44,7 +48,7 @@ class Page extends React.Component<{}, PageState> {
     render() {
       return (
         <div>
-            <Sidebar setValleyValue={this.setValleyValue.bind(this)} setPeakValue={this.setPeakValue.bind(this)} setWidthFactor={this.setWidthFactor.bind(this)} setNodeData={this.setNodeData.bind(this)} />
+            <Sidebar setValleyValue={this.setValleyValue.bind(this)} setPeakValue={this.setPeakValue.bind(this)} setWidthFactor={this.setWidthFactor.bind(this)} setNodeData={this.setNodeData.bind(this)} setEdgeData={this.setEdgeData.bind(this)}/>
             <div className="canvasContainer">
                 <canvas ref={this.state.canvasRef} width={800} height={800}></canvas>
             </div>
