@@ -56,7 +56,7 @@ class Sidebar extends React.Component<SidebarProps, SidebarState> {
     let self = this;
     let end = false
 
-    this.loadData("facebook_1912_clusters.json", (data) => {
+    this.loadData("mygraph_3_regex.json", (data) => {
     var width = 700;
     var height = 500;
   
@@ -192,9 +192,9 @@ class Sidebar extends React.Component<SidebarProps, SidebarState> {
             let sourceIndex = 2*edge.source.index;
             let targetIndex = 2*edge.target.index;
             let sourceX = nodeData2[sourceIndex];
-            let sourceY = nodeData2[sourceIndex++];
+            let sourceY = nodeData2[sourceIndex+1];
             let targetX = nodeData2[targetIndex];
-            let targetY = nodeData2[targetIndex++];
+            let targetY = nodeData2[targetIndex+1];
             edgeData2.push(sourceX, sourceY, targetX, targetY);
           });
           self.props.setEdgeData(edgeData2);

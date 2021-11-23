@@ -146,7 +146,7 @@ class Renderer {
         depthCompare: "less"
       },
       primitive: {
-        topology: "line-list" //triangle-list is default  
+        topology: "line-list" //triangle-list is default   
       }
     });
 
@@ -353,7 +353,8 @@ class Renderer {
 
       passEncoder.setPipeline(render.edgePipeline!);
       passEncoder.setVertexBuffer(0, render.edgeDataBuffer);
-      passEncoder.draw(render.edgeVertexCount)
+      passEncoder.draw(render.edgeVertexCount);
+
       passEncoder.setPipeline(pipeline);
       passEncoder.setVertexBuffer(0, dataBuf2D);
       passEncoder.setBindGroup(0, render.bindGroup2D!);
@@ -372,6 +373,7 @@ class Renderer {
 
   setNodeData(nodeData: Array<number>, end: boolean) {
     // TODO: Implement the translation and global range options
+    console.log(nodeData.length/2);
     // console.log(nodeData)
     if(end){
       console.log(end)
@@ -431,20 +433,19 @@ class Renderer {
 
 
   setEdgeData(edgeData: Array<number>){
-    
+    // console.log(edgeData.length/4);
+
     this.edgeDataBuffer = this.device.createBuffer({
       size: edgeData.length*4,
       usage: GPUBufferUsage.COPY_SRC|GPUBufferUsage.VERTEX,
       mappedAtCreation: true
     });
-
     new Float32Array(this.edgeDataBuffer.getMappedRange()).set(edgeData);
     this.edgeDataBuffer.unmap();
     this.edgeVertexCount = edgeData.length/2;
     
   }
 
-  
   setWidthFactor(widthFactor: number) {
     this.terrainGenerator!.computeTerrain(undefined, widthFactor);
   }
